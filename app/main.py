@@ -3,12 +3,14 @@ from app.agents.product_agent import ProductAgent
 from app.agents.recommender_agent import RecommenderAgent
 from datetime import datetime
 import sqlite3
+import os
 
 class AgentController:
     def __init__(self):
-        self.user_agent = UserAgent()
-        self.product_agent = ProductAgent()
-        self.recommender_agent = RecommenderAgent()
+        db_path = os.path.join("app", "database", "smartshop.db")
+        self.user_agent = UserAgent(db_path)
+        self.product_agent = ProductAgent(db_path)
+        self.recommender_agent = RecommenderAgent(db_path)
         self.cart = {}  # {user_id: [product_id, ...]}
 
     def get_user_dashboard(self, user_id):
@@ -42,18 +44,23 @@ class AgentController:
         if user_id not in self.cart or not self.cart[user_id]:
             return "🛍️ Cart is empty."
 
-        conn = sqlite3.connect("app/database/smartshop.db")
+        db_path = os.path.join("app", "database", "smartshop.db")
+        conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        for product_id in self.cart[user_id]:
-            cursor.execute("""
-                INSERT INTO browsing_history (user_id, product_id, action, timestamp)
-                VALUES (?, ?, 'purchased', ?)
-            """, (user_id, product_id, datetime.now().isoformat()))
+        # Optional: check if browsing_history table exists
+        try:
+            for product_id in self.cart[user_id]:
+                cursor.execute("""
+                    INSERT INTO browsing_history (user_id, product_id, action, timestamp)
+                    VALUES (?, ?, 'purchased', ?)
+                """, (user_id, product_id, datetime.now().isoformat()))
 
-        conn.commit()
-        conn.close()
-
-        count = len(self.cart[user_id])
-        self.cart[user_id] = []
-        return f"✅ Purchased {count} item(s)."
+            conn.commit()
+            count = len(self.cart[user_id])
+            self.cart[user_id] = []
+            return f"✅ Purchased {count} item(s)."
+        except sqlite3.Error as e:
+            return f"❌ Failed to record purchases: {e}"
+        finally:
+            conn.close()
