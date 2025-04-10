@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.swp
+*.bak
+*.tmp
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environments
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+
+# VS Code & PyCharm
+.vscode/
+.idea/
+
+# Logs and debug
+*.log
+*.pid
+*.coverage
+
+# Database
+*.db
+*.sqlite3
+
+# Ollama and LLM downloads
+ollama_models/
+ollama_cache/
+
+# Streamlit
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test output
+*.pytest_cache/
+.pytest_cache/
+
+# Uploads or outputs
+outputs/
+uploads/
