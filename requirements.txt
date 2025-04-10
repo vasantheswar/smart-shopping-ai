@@ -1,15 +1,7 @@
 requirements.txt
-txt
-Copy
-Edit
 streamlit==1.31.1
 pandas==2.2.2
-ollama==0.1.7
 numpy==1.26.4
 matplotlib==3.8.4
 scikit-learn==1.4.1
-
-✅ Optional additions (you can include these if you're using them):
-
-sqlalchemy==2.0.29     # if using SQLAlchemy ORM in future
-openai==1.16.1         # if expanding with OpenAI
+sqlite3

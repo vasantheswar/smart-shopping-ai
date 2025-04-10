@@ -1,9 +1,15 @@
 import json
 import re
 
+# Toggle this to False when deploying to Streamlit Cloud
+USE_OLLAMA = False
+
 try:
-    import ollama
-    ollama_available = True
+    if USE_OLLAMA:
+        import ollama
+        ollama_available = True
+    else:
+        ollama_available = False
 except ImportError:
     ollama_available = False
 
@@ -11,7 +17,7 @@ except ImportError:
 class LLMQueryAgent:
     def __init__(self, model="phi"):
         if not ollama_available:
-            raise RuntimeError("Ollama is not available. Please install it and try again.")
+            raise RuntimeError("LLM agent is not available in this environment.")
         self.model = model
 
     def ask(self, prompt, max_tokens=200):
@@ -39,9 +45,9 @@ class LLMQueryAgent:
             )
             raw = response['message']['content']
 
+            # Try to extract JSON
             json_match = re.search(r'\{.*?\}', raw, re.DOTALL)
             if not json_match:
-                # Return full raw response as AI output
                 return {
                     "category": None,
                     "subcategory": None,
@@ -68,9 +74,6 @@ class LLMQueryAgent:
             }
 
     def filter_products_from_intent(self, intent, product_agent, limit=10):
-        """
-        Given a parsed intent JSON and a product agent, return filtered products.
-        """
         category = intent.get("category")
         subcategory = intent.get("subcategory")
         max_price = intent.get("max_price")
@@ -78,39 +81,34 @@ class LLMQueryAgent:
         purpose = intent.get("purpose")
 
         # Step 1: Try subcategory
+        products = []
         if subcategory:
             products = product_agent.get_products_by_subcategory(subcategory, limit=limit)
             if not products:
                 subcategory = None
-        else:
-            products = []
 
-        # Step 2: Fallback to category
+        # Step 2: Try category
         if not products and category:
             products = product_agent.get_products_by_category(category, limit=limit)
             if not products:
                 category = None
 
-        # Step 3: Fallback to random
+        # Step 3: Random fallback
         if not products:
             products = product_agent.get_random_products(limit)
 
-        # Step 4: Filter by price
+        # Step 4: Filter by max price
         if max_price:
             try:
                 max_price = float(str(max_price).replace("₹", "").strip())
-                filtered = [p for p in products if float(p.get("Price", 0)) <= max_price]
-                if filtered:
-                    products = filtered
+                products = [p for p in products if float(p.get("Price", 0)) <= max_price]
             except:
                 pass
 
-        # Step 5: Optional personalization logic
+        # Step 5: Personalize by tone/purpose
         products = sorted(products, key=lambda x: float(x.get("Price", 0)))
-
         if tone == "fun":
-            products = sorted(products, key=lambda x: "toys" in x.get("Category", "").lower() or "games" in x.get("Subcategory", "").lower(), reverse=True)
-
+            products = sorted(products, key=lambda x: "toy" in x.get("Category", "").lower() or "game" in x.get("Subcategory", "").lower(), reverse=True)
         if purpose == "gift":
             products = sorted(products, key=lambda x: "gift" in x.get("Subcategory", "").lower() or "bundle" in x.get("Brand", "").lower(), reverse=True)
 
